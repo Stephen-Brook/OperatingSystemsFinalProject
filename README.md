@@ -14,3 +14,4 @@ python3 main.py -n numProcesses
 ## Algorithm Implementation Instructions
 1. Follow the structure defined in the Scheduler class in ```schedulers.py```
 2. Use the existing algorithms as reference
+3. Add the new algorithm to the REGISTEY at the bottom of ```schedulers.py```
