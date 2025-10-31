@@ -58,11 +58,11 @@ class DynamicAgingRR(Scheduler):
     preemptive = True
 
     #minimum time slice for preemption
-    base_quantum: int = 2
+    base_quantum = 2
     #maximum time slice for preemption
-    max_quantum: int = 8
+    max_quantum = 8
     #how quickly age increases time slice
-    age_boost_div: int = 3
+    age_boost_div = 3
     #how numeric priority influnces which process is selected next
     priority_weight: float = 0.5
 
@@ -71,7 +71,7 @@ class DynamicAgingRR(Scheduler):
         self.first_ready_seen_at = {}
 
     #age since either first becoming ready or last dispatched
-    def _age(self, p, now: int):
+    def _age(self, p, now):
         start = self.last_dispatch_time.get(p.name, self.first_ready_seen_at.get(p.name, now))
         return max(0, now - start)
 
