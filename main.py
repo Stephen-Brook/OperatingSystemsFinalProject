@@ -1,6 +1,8 @@
 import argparse
 from process import Process, ProcessStatus
 from schedulers import REGISTRY, Scheduler
+import csv
+import time
 
 #create a set of processes
 #n is the number of processes
@@ -96,6 +98,7 @@ def simulate(processes, scheduler):
             continue
 
         #run one cycle on the current process
+        print(f"Time {now}: Running {current.name} (Remaining Time: {current.remaining_time}), Algorithm: {scheduler.__class__.__name__}")
         current.run_one_cycle()
 
         #if the scheduler is preemptive, decrement the slice_remaining value (the time until it can preempt again)
@@ -115,18 +118,23 @@ def simulate(processes, scheduler):
                 slice_remaining = None
 
         now += 1
+        time.sleep(0.1) # Slow down the simulation for observability
 
-def print_initial(processes):
-    print(f"\n------------Initial Processes------------")
-    for p in processes:
-        print(f"{p.name}: Priority={p.priority}, Arrival={p.simulated_arrival_time}, Service={p.service_time}")
+def generate_initial_csv(processes): # Generate CSV of initial process set
+    with open ("initial_processes.csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Process Name", "Priority", "Arrival Time", "Service Time"])
+        for p in processes:
+            writer.writerow([p.name, p.priority, p.simulated_arrival_time, p.service_time])
 
-def print_results(processes, algorithm):
-    print(f"\n------------{algorithm} Results------------")
-    for p in processes:
-        ta = 0 if p.turnaround_time is None else round(p.turnaround_time, 4)
-        wt = 0 if p.waiting_time is None else round(p.waiting_time, 4)
-        print(f"{p.name}: Status={p.status}, Turnaround={ta}, Waiting={wt}")
+def generate_result_csv(processes, algorithm): # Generate CSV of results after scheduling simulation
+    with open (f"{algorithm}_results.csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Process Name", "Priority", "Simulated Arrival Time", "Actual Arrival Time", "Service Time", "Turnaround Time", "Waiting Time"])
+        for p in processes:
+            ta = 0 if p.turnaround_time is None else round(p.turnaround_time, 4)
+            wt = 0 if p.waiting_time is None else round(p.waiting_time, 4)
+            writer.writerow([p.name, p.priority, p.simulated_arrival_time, p.real_arrival_time, p.service_time, ta, wt])
 
 def main():
     parser = argparse.ArgumentParser(description="Run ALL schedulers on a RANDOM set of processes")
@@ -135,7 +143,7 @@ def main():
 
     #1. build a random set of processes of size n
     canonical = generate_processes(args.n)
-    print_initial(canonical)
+    generate_initial_csv(canonical)
 
     #2. for each scheduler, clone the process and simulate
     for name, cls in REGISTRY.items():
@@ -144,7 +152,7 @@ def main():
         scheduler: Scheduler = cls()
         simulate(run_set, scheduler)
 
-        print_results(run_set, name.upper())
+        generate_result_csv(run_set, name.upper())
 
 # Just code for testing, this doesn't account for arrival time. It is a basic FIFO algorithm
 # def main():
