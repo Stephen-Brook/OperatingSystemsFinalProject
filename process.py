@@ -21,15 +21,15 @@ class Process:
         self.priority = random.randint(1, 10)
         self.status = ProcessStatus.NEW
         self.simulated_arrival_time = random.randint(0, 10)
-        self.real_arrival_time = None
         self.service_time = random.randint(1, 10)
         self.remaining_time = self.service_time
+        self.arrival_tick = None
+        self.completion_tick = None
         self.turnaround_time = None
         self.waiting_time = None
 
-
-    def run_one_cycle(self): # Simulate running the process for one time unit (1s)
-        if self.status != ProcessStatus.READY and self.status != ProcessStatus.RUNNING: # Check if the process is in a state that allows it to run
+    def run_one_cycle(self): # Simulate running the process for one time unit (simulated tick)
+        if self.status not in (ProcessStatus.READY, ProcessStatus.RUNNING): # Check if the process is in a state that allows it to run
             #print(f"Process {self.name} cannot run. Current status: {self.status}")
             return
 
@@ -37,21 +37,19 @@ class Process:
 
         if self.remaining_time > 0: # If there is remaining time, simulate running
             # time.sleep(1) # Simulate the time taken for one cycle
-            self.remaining_time -= 1 # Decrease the remaining time by 1
-            if self.remaining_time == 0: # If the process has completed its service time
-                self.stop()
-            #else: # If there is still remaining time, print the status
-                #print(f"Process {self.name} running, remaining time: {self.remaining_time}")
-
-
-
-    def ready(self): # Set the process status to READY
-        if self.status != ProcessStatus.NEW and self.status != ProcessStatus.BLOCKED and self.status != ProcessStatus.RUNNING: # Check if the process can be set to READY
+            self.remaining_time -= 1
+            #DO NOT call stop() here, we need now to compute metrics
+            #the main loop will detect when remaining_time hits 0
+    
+    def ready(self, now=None): # Set the process status to READY using simulated time
+        # Only allow transitions from NEW, BLOCKED, or RUNNING (for preemption)
+        if self.status not in (ProcessStatus.NEW, ProcessStatus.BLOCKED, ProcessStatus.RUNNING):  # Check if the process can be set to READY
             #print(f"Process {self.name} cannot be set to ready. Current status: {self.status}")
             return
         else:
-            if self.real_arrival_time is None: # Record the real arrival time if not already set
-                self.real_arrival_time = time.time()
+            #only set arrival_tick the first time it becomes READY
+            if self.arrival_tick is None and now is not None:
+                self.arrival_tick = now
             #print(f"Process {self.name} ready.")
             self.status = ProcessStatus.READY
 
@@ -64,13 +62,13 @@ class Process:
             #print(f"Process {self.name} blocked. Remaining time: {self.remaining_time}")
             self.status = ProcessStatus.BLOCKED
 
-
-    def stop(self): # Terminate the process and calculate turnaround and waiting times
+    def stop(self, now): # terminate the process and calculate turnaround and waiting times
         if self.status != ProcessStatus.RUNNING:
-            #print(f"Process {self.name} cannot be stopped. Current status: {self.status}")
             return
         else:
             self.status = ProcessStatus.TERMINATED
-            self.turnaround_time = time.time() - self.real_arrival_time # Calculate turnaround time
-            self.waiting_time = self.turnaround_time - self.service_time # Calculate waiting time
-            #print(f"Process {self.name} terminated. Turnaround time: {self.turnaround_time}, Waiting time: {self.waiting_time}")
+
+            #assume it completes at the END of this tick
+            self.completion_tick = now + 1
+            self.turnaround_time = self.completion_tick - self.arrival_tick
+            self.waiting_time = self.turnaround_time - self.service_time
