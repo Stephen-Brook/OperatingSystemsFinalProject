@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import random
 from process import Process, ProcessStatus
-from queue import Queue
 
 class Scheduler(ABC):
     name: str
@@ -19,6 +18,35 @@ class Scheduler(ABC):
     #by default, a use preemptive_tick, else use 1
     def preempt_interval(self, now, current):
         return max(1, getattr(self, "preemptive_tick", 1))
+
+# simple round robin scheduler
+class RoundRobin(Scheduler):
+    name = "rr"
+    preemptive = True
+    preemptive_tick = 4
+
+    def __init__(self):
+        self.queue = []
+
+    def pick_next(self, ready, now, current):
+        #update the queue to match the ready processes
+        ready_names = set(p.name for p in ready)
+        self.queue = [p for p in self.queue if p.name in ready_names]
+        for p in ready:
+            if p.name not in (q.name for q in self.queue):
+                self.queue.append(p)
+
+        if not self.queue:
+            return None
+
+        if current and current.status != ProcessStatus.TERMINATED:
+            #if the current process is still running, keep it at the front of the queue
+            return current
+
+        #get the next process in the queue
+        next_process = self.queue.pop(0)
+        self.queue.append(next_process)
+        return next_process
 
 # pick the process with the highest priority at each scheduling decision
 class PriorityPreemptive(Scheduler):
@@ -208,6 +236,7 @@ class DynamicAgingRR(Scheduler):
 REGISTRY = {
     Lottery.name: Lottery,
     DynamicAgingRR.name: DynamicAgingRR,
+    RoundRobin.name: RoundRobin,
     FirstComeFirstServe.name: FirstComeFirstServe,
     ShortestRemainingTime.name: ShortestRemainingTime,
     ShortestJobNext.name: ShortestJobNext,

@@ -77,23 +77,36 @@ def _plot_turnaround(labels, turnaround_values):
 
 
 def _plot_initial_metrics():
-    processes = []
+    arrival_times = []
+    service_times = []
     with open('initial_processes.csv', newline='') as f:
         file = csv.reader(f)
         next(file)
         for line in file:
             if not line:
                 continue
-            processes.append(line[2])
+            arrival_times.append(line[2])
+            service_times.append(line[3])
 
-    x = range(len(processes))  # Create x values as the length of arrival times
+    x1 = range(len(arrival_times))  # Create x values as the length of arrival times
     plt.figure(figsize=(8, 5))
-    plt.plot(x, list(map(int, processes)), 'o')
+    plt.plot(x1, list(map(int, arrival_times)), 'o')
     plt.xlabel("Process Index")
     plt.ylabel("Arrival Time")
     plt.title("Arrival Times of Processes")
     plt.grid(axis="y", linestyle="--", alpha=0.5)
     plt.tight_layout()
+
+    x2 = range(len(service_times))  # Create x values as the length of arrival times
+    plt.figure(figsize=(8, 5))
+    plt.plot(x2, list(map(int, service_times)), 'o')
+    plt.xlabel("Process Index")
+    plt.ylabel("Service Time")
+    plt.title("Service Times of Processes")
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+
+
 
 
 if __name__ == "__main__":
