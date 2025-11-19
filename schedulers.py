@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 from process import Process, ProcessStatus
+from queue import Queue
 
 class Scheduler(ABC):
     name: str
@@ -19,6 +20,85 @@ class Scheduler(ABC):
     def preempt_interval(self, now, current):
         return max(1, getattr(self, "preemptive_tick", 1))
 
+# pick the process with the highest priority at each scheduling decision
+class PriorityPreemptive(Scheduler):
+    name = "pripreempt"
+    preemptive = True
+    preemptive_tick = 1
+
+    def pick_next(self, ready, now, current):
+        if not ready:
+            return None
+        #pick the process with the highest priority (lowest numeric value)
+        return min(ready, key=lambda p: (p.priority, p.simulated_arrival_time, p.name))
+
+# pick the process with the highest priority when the cpu is free
+class PriorityNonPreemptive(Scheduler):
+    name = "prinonpreempt"
+    preemptive = False
+
+    def pick_next(self, ready, now, current):
+        if current and current.status != ProcessStatus.TERMINATED:
+            #non preemptive, keep running the current process at each interrupt
+            return current
+        if not ready:
+            return None
+        #if the current process is done, get the process with the highest priority (lowest numeric value)
+        return min(ready, key=lambda p: (p.priority, p.simulated_arrival_time, p.name))
+
+# pick the process that arrived first when the cpu is free
+class FirstComeFirstServe(Scheduler):
+    name = "fcfs"
+    preemptive = False
+
+    def pick_next(self, ready, now, current):
+        if current and current.status != ProcessStatus.TERMINATED:
+            #non preemptive, keep running the current process at each interrupt
+            return current
+        if not ready:
+            return None
+        #if the current process is done, get the process with the earliest arrival time
+        return min(ready, key=lambda p: (p.simulated_arrival_time, p.name))
+
+# pick the process with the highest response ratio when the cpu is free
+class HighestResponseRatioNext(Scheduler):
+    name = "hrrn"
+    preemptive = False
+
+    def pick_next(self, ready, now, current):
+        if current and current.status != ProcessStatus.TERMINATED:
+            #non preemptive, keep running the current process at each interrupt
+            return current
+
+        def response_ratio(p):
+            waiting_time = now - p.arrival_tick
+            return (waiting_time + p.service_time) / p.service_time
+
+        return max(ready, key=response_ratio)
+
+#pick the process with the least remaining time at each scheduling decision
+class ShortestRemainingTime(Scheduler):
+    name = "srt"
+    preemptive = True
+    preemptive_tick = 1
+
+    def pick_next(self, ready, now, current):
+        if not ready:
+            return None
+        #pick the process with the shortest remaining time
+        return min(ready, key=lambda p: (p.remaining_time, p.simulated_arrival_time, p.name))
+
+#pick the process with the longest remaining time at each scheduling decision
+class LongestRemainingTime(Scheduler):
+    name = "lrt"
+    preemptive = True
+    preemptive_tick = 1
+
+    def pick_next(self, ready, now, current):
+        if not ready:
+            return None
+        #pick the process with the longest remaining time
+        return max(ready, key=lambda p: (p.remaining_time, p.service_time, p.name))
 
 #pick the process with the least remaining time when the cpu is free
 class ShortestJobNext(Scheduler):
@@ -33,6 +113,20 @@ class ShortestJobNext(Scheduler):
             return None
         #if the current process is done, get the process with the shortest time required on the cpu
         return min(ready, key=lambda p: (p.remaining_time, p.simulated_arrival_time, p.name))
+
+#pick the process with the most remaining time when the cpu is free
+class LongestJobNext(Scheduler):
+    name = "ljn"
+    preemptive = False
+
+    def pick_next(self, ready, now, current):
+        if current and current.status != ProcessStatus.TERMINATED:
+            #non preemptive, keep running the current process at each interrupt
+            return current
+        if not ready:
+            return None
+        #if the current process is done, get the process with the longest time required on the cpu
+        return max(ready, key=lambda p: (p.remaining_time, p.service_time, p.name))
 
 #give each process a number of tickets proportional to its priotity
 #at each scheduling decision choose a ticket at random to pick the next process
@@ -112,7 +206,14 @@ class DynamicAgingRR(Scheduler):
 
 #add new algorithms here and register them:
 REGISTRY = {
-    ShortestJobNext.name: ShortestJobNext,
     Lottery.name: Lottery,
     DynamicAgingRR.name: DynamicAgingRR,
+    FirstComeFirstServe.name: FirstComeFirstServe,
+    ShortestRemainingTime.name: ShortestRemainingTime,
+    ShortestJobNext.name: ShortestJobNext,
+    LongestRemainingTime.name: LongestRemainingTime,
+    LongestJobNext.name: LongestJobNext,
+    HighestResponseRatioNext.name: HighestResponseRatioNext,
+    PriorityPreemptive.name: PriorityPreemptive,
+    PriorityNonPreemptive.name: PriorityNonPreemptive,
 }

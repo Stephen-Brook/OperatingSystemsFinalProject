@@ -26,6 +26,7 @@ def run_metrics():
 
     _plot_waiting(algo_labels, avg_waiting_times)
     _plot_turnaround(algo_labels, avg_turnaround_times)
+    _plot_initial_metrics()
     plt.show()
 
 
@@ -71,6 +72,26 @@ def _plot_turnaround(labels, turnaround_values):
     plt.xticks(x, labels)
     plt.ylabel("Average Turnaround Time (ticks)")
     plt.title("Turnaround Time Comparison Across Schedulers")
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+
+
+def _plot_initial_metrics():
+    processes = []
+    with open('initial_processes.csv', newline='') as f:
+        file = csv.reader(f)
+        next(file)
+        for line in file:
+            if not line:
+                continue
+            processes.append(line[2])
+
+    x = range(len(processes))  # Create x values as the length of arrival times
+    plt.figure(figsize=(8, 5))
+    plt.plot(x, list(map(int, processes)), 'o')
+    plt.xlabel("Process Index")
+    plt.ylabel("Arrival Time")
+    plt.title("Arrival Times of Processes")
     plt.grid(axis="y", linestyle="--", alpha=0.5)
     plt.tight_layout()
 

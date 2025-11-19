@@ -18,9 +18,9 @@ class Process:
     def __init__(self, name):
         self.name = name
         self.id = id(self)
-        self.priority = random.randint(1, 10)
+        self.priority = random.randint(1, 5)
         self.status = ProcessStatus.NEW
-        self.simulated_arrival_time = random.randint(0, 10)
+        self.simulated_arrival_time = random.randint(0, 100)
         self.service_time = random.randint(1, 10)
         self.remaining_time = self.service_time
         self.arrival_tick = None
