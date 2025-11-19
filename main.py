@@ -2,7 +2,7 @@ import argparse
 from process import Process, ProcessStatus
 from schedulers import REGISTRY, Scheduler
 import csv
-import time
+from metrics import run_metrics
 
 #create a set of processes
 #n is the number of processes
@@ -178,3 +178,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    run_metrics()
