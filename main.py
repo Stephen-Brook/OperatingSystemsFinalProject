@@ -99,7 +99,7 @@ def simulate(processes, scheduler):
             continue
 
         #run one cycle on the current process
-        print(f"Time {now}: Running {current.name} (Remaining Time: {current.remaining_time}), Algorithm: {scheduler.__class__.__name__}")
+        # print(f"Time {now}: Running {current.name} (Remaining Time: {current.remaining_time}), Algorithm: {scheduler.__class__.__name__}")
         current.run_one_cycle()
         #if the process just finished on this tick, finalize and mark TERMINATED
         if current.remaining_time == 0 and current.status == ProcessStatus.RUNNING:
@@ -115,6 +115,7 @@ def simulate(processes, scheduler):
             #otherwise, keep the currpent process
             if slice_remaining is not None and slice_remaining <= 0:
                 #return the current process to the ready state
+                current.preemptions += 1
                 current.ready(now=None)
                 #the scheduler has to repick the process at the next tick
                 current = None
@@ -124,21 +125,21 @@ def simulate(processes, scheduler):
         now += 1
         #time.sleep(0.1) # Slow down the simulation for observability
 
-def generate_initial_csv(processes): # Generate CSV of initial process set
-    with open ("initial_processes.csv", mode='w', newline='') as file:
+def generate_initial_csv(processes, num_processes): # Generate CSV of initial process set
+    with open (f"./results/{num_processes}_processes/initial_processes_{num_processes}.csv", mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Process Name", "Priority", "Arrival Time", "Service Time"])
         for p in processes:
             writer.writerow([p.name, p.priority, p.simulated_arrival_time, p.service_time])
 
-def generate_result_csv(processes, algorithm): # Generate CSV of results after scheduling simulation
-    with open (f"{algorithm}_results.csv", mode='w', newline='') as file:
+def generate_result_csv(processes, algorithm, num_processes): # Generate CSV of results after scheduling simulation
+    with open (f"./results/{num_processes}_processes/{algorithm}_results_{num_processes}.csv", mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["Process Name", "Priority", "Simulated Arrival Time", "Arrival Tick", "Completion Tick", "Service Time", "Turnaround (ticks)", "Waiting (ticks)"])
+        writer.writerow(["Process Name", "Priority", "Simulated Arrival Time", "Arrival Tick", "Completion Tick", "Service Time", "Turnaround (ticks)", "Waiting (ticks)", "Preemptions"])
         for p in processes:
             ta = 0 if p.turnaround_time is None else p.turnaround_time
             wt = 0 if p.waiting_time is None else p.waiting_time
-            writer.writerow([p.name, p.priority, p.simulated_arrival_time, p.arrival_tick, p.completion_tick, p.service_time, ta, wt])
+            writer.writerow([p.name, p.priority, p.simulated_arrival_time, p.arrival_tick, p.completion_tick, p.service_time, ta, wt, p.preemptions])
 
 def main():
     parser = argparse.ArgumentParser(description="Run ALL schedulers on a RANDOM set of processes")
@@ -147,7 +148,7 @@ def main():
 
     #1. build a random set of processes of size n
     canonical = generate_processes(args.n)
-    generate_initial_csv(canonical)
+    generate_initial_csv(canonical, args.n)
 
     #2. for each scheduler, clone the process and simulate
     for name, cls in REGISTRY.items():
@@ -156,10 +157,11 @@ def main():
         scheduler: Scheduler = cls()
         simulate(run_set, scheduler)
 
-        generate_result_csv(run_set, name.upper())
+        generate_result_csv(run_set, name.upper(), num_processes=args.n)
+    #3. run metrics on the results
+    run_metrics(args.n)
 
 
 if __name__ == "__main__":
     main()
-    run_metrics()
 

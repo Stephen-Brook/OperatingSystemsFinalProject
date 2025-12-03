@@ -20,13 +20,14 @@ class Process:
         self.id = id(self)
         self.priority = random.randint(1, 5)
         self.status = ProcessStatus.NEW
-        self.simulated_arrival_time = random.randint(0, 1000)
+        self.simulated_arrival_time = random.randint(0, 5500)
         self.service_time = random.randint(1, 10)
         self.remaining_time = self.service_time
         self.arrival_tick = None
         self.completion_tick = None
         self.turnaround_time = None
         self.waiting_time = None
+        self.preemptions = 0
 
     def run_one_cycle(self): # Simulate running the process for one time unit (simulated tick)
         if self.status not in (ProcessStatus.READY, ProcessStatus.RUNNING): # Check if the process is in a state that allows it to run

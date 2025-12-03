@@ -2,14 +2,14 @@ import csv
 import matplotlib.pyplot as plt
 from schedulers import REGISTRY
 
-def run_metrics():
+def run_metrics(num_processes):
     algo_labels = []
     avg_turnaround_times = []
     avg_waiting_times = []
 
     for key in REGISTRY.keys():
         algo_name = key.upper()
-        filename = f"{algo_name}_results.csv"
+        filename = f"./results/{num_processes}_processes/{algo_name}_results_{num_processes}.csv"
 
         try:
             avg_service, avg_turnaround, avg_waiting = _read_metrics(filename)
@@ -24,10 +24,10 @@ def run_metrics():
 
         print(f"{label}: TA={avg_turnaround:.2f}, wait={avg_waiting:.2f}")
 
-    _plot_waiting(algo_labels, avg_waiting_times)
-    _plot_turnaround(algo_labels, avg_turnaround_times)
-    _plot_initial_metrics()
-    plt.show()
+    # _plot_waiting(algo_labels, avg_waiting_times)
+    # _plot_turnaround(algo_labels, avg_turnaround_times)
+    # _plot_initial_metrics()
+    # plt.show()
 
 
 def _read_metrics(filename):
