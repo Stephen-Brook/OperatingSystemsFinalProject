@@ -58,7 +58,7 @@ class PriorityPreemptive(Scheduler):
         if not ready:
             return None
         #pick the process with the highest priority (lowest numeric value)
-        return max(ready, key=lambda p: (p.priority, p.simulated_arrival_time, p.name))
+        return max(ready, key=lambda p: (p.priority, -p.simulated_arrival_time, p.name))
 
 # pick the process with the highest priority when the cpu is free
 class PriorityNonPreemptive(Scheduler):
@@ -72,7 +72,7 @@ class PriorityNonPreemptive(Scheduler):
         if not ready:
             return None
         #if the current process is done, get the process with the highest priority (lowest numeric value)
-        return max(ready, key=lambda p: (p.priority, p.simulated_arrival_time, p.name))
+        return max(ready, key=lambda p: (p.priority, -p.simulated_arrival_time, p.name))
 
 # pick the process that arrived first when the cpu is free
 class FirstComeFirstServe(Scheduler):
@@ -86,7 +86,7 @@ class FirstComeFirstServe(Scheduler):
         if not ready:
             return None
         #if the current process is done, get the process with the earliest arrival time
-        return min(ready, key=lambda p: (p.simulated_arrival_time, p.name))
+        return min(ready, key=lambda p: (p.simulated_arrival_time, p.priority, p.name))
 
 # pick the process with the highest response ratio (waiting/service_time) when the cpu is free
 class HighestResponseRatioNext(Scheduler):
@@ -114,7 +114,7 @@ class ShortestRemainingTime(Scheduler):
         if not ready:
             return None
         #pick the process with the shortest remaining time
-        return min(ready, key=lambda p: (p.remaining_time, p.simulated_arrival_time, p.name))
+        return min(ready, key=lambda p: (p.remaining_time, p.simulated_arrival_time, p.priority, p.name))
 
 #pick the process with the longest remaining time at each scheduling decision
 class LongestRemainingTime(Scheduler):
@@ -126,7 +126,7 @@ class LongestRemainingTime(Scheduler):
         if not ready:
             return None
         #pick the process with the longest remaining time
-        return max(ready, key=lambda p: (p.remaining_time, p.simulated_arrival_time, p.name))
+        return max(ready, key=lambda p: (p.remaining_time, -p.simulated_arrival_time, p.priority, p.name))
 
 #pick the process with the least remaining time when the cpu is free
 class ShortestJobNext(Scheduler):
@@ -140,7 +140,7 @@ class ShortestJobNext(Scheduler):
         if not ready:
             return None
         #if the current process is done, get the process with the shortest time required on the cpu
-        return min(ready, key=lambda p: (p.service_time, p.simulated_arrival_time, p.name))
+        return min(ready, key=lambda p: (p.service_time, p.simulated_arrival_time, p.priority, p.name))
 
 #pick the process with the most remaining time when the cpu is free
 class LongestJobNext(Scheduler):
@@ -154,7 +154,7 @@ class LongestJobNext(Scheduler):
         if not ready:
             return None
         #if the current process is done, get the process with the longest time required on the cpu
-        return max(ready, key=lambda p: (p.service_time, p.simulated_arrival_time, p.name))
+        return max(ready, key=lambda p: (p.service_time, -p.simulated_arrival_time, p.priority, p.name))
 
 #give each process a number of tickets proportional to its priotity
 #at each scheduling decision choose a ticket at random to pick the next process
@@ -210,7 +210,7 @@ class DynamicAgingRR(Scheduler):
         def score(p):
             return self._age(p, now) + self.priority_weight * float(p.priority)
 
-        chosen = max(ready, key=score)
+        chosen = max(ready, key=lambda p: (score(p), -p.simulated_arrival_time, p.priority, p.name))
 
         #mark the dispatch moment, we need this for age calculation
         self.last_dispatch_time[chosen.name] = now
